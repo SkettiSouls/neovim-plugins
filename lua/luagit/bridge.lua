@@ -13,7 +13,7 @@ fi
 -- Lazygit forces its' preset and template system on you unless you change your config,
 -- so to avoid requiring config changes we create a bash script in /tmp/luagit/<nvim_server>
 -- and disguise it as the vim binary in $PATH.
-local function prevent_nesting()
+local function build_bridge()
   local tmpdir = '/tmp/luagit/' .. string.gsub(vim.fn.serverlist()[1], '^.*/', '')
   local tmpfile = tmpdir .. '/vim'
   os.execute('mkdir -p ' .. tmpdir)
@@ -29,33 +29,20 @@ local function prevent_nesting()
 
   vim.api.nvim_create_user_command('LazygitEdit', function(tbl)
     vim.cmd.edit(tbl.args)
-
+    vim.g.lazygit_file = true
     local git_buf, _ = utils.find_lazygit()
-
-    -- Prevent moving lazygit instance into the file it's editing. (e.g. open lazygit -> edit file -> open lazygit in file)
-    vim.keymap.del('n', '<leader>g')
-    vim.keymap.del('n', '<leader>G')
-    -- Trigger `QuitPre` event instead of moving lazygit. Writes for convenience.
-    vim.keymap.set('n', '<leader>g', function()
-      vim.cmd.write()
-      vim.cmd.quit()
-    end)
 
     -- HACK: Return to lazygit when running `:q`
     vim.api.nvim_create_autocmd('QuitPre', {
       once = true,
       group = lazygit_group,
       callback = function()
-        -- Undo mapping changes
-        vim.keymap.del('n', '<leader>g')
-        vim.keymap.set('n', '<leader>g', function() luagit.open() end)
-        vim.keymap.set('n', '<leader>G', function() luagit.open('vsplit') end)
-
         vim.cmd('new ' .. git_buf)
         vim.cmd.startinsert()
+        vim.g.lazygit_file = false
       end
     })
   end, { nargs = 1, desc = "Handle editing a file from inside lazygit" })
 end
 
-return { prevent_nesting = prevent_nesting }
+return { build_bridge = build_bridge }
