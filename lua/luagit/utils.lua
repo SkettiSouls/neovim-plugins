@@ -21,7 +21,7 @@ local function get_win_table()-- {{{
 end-- }}}
 
 ---@return nil|string Name of the lazygit buffer
----@return nil|number Window number containing the lazygit buffer
+---@return nil|integer Window number containing the lazygit buffer
 local function find_lazygit()-- {{{
   local buf_table = get_buf_table()
   local win_table = get_win_table()

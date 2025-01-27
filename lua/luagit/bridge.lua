@@ -1,3 +1,4 @@
+local luagit = require('luagit')
 local utils = require('luagit.utils')
 local lazygit_bridge = [[
 #!/usr/bin/env bash
@@ -47,8 +48,8 @@ local function prevent_nesting()
       callback = function()
         -- Undo mapping changes
         vim.keymap.del('n', '<leader>g')
-        vim.keymap.set('n', '<leader>g', function() open_git_buf() end)
-        vim.keymap.set('n', '<leader>G', function() open_git_split('vsplit') end)
+        vim.keymap.set('n', '<leader>g', function() luagit.open() end)
+        vim.keymap.set('n', '<leader>G', function() luagit.open('vsplit') end)
 
         vim.cmd('new ' .. git_buf)
         vim.cmd.startinsert()
