@@ -85,14 +85,14 @@ local function open(method)-- {{{
       if git_buf ~= nil then
         vim.cmd.edit(git_buf)
       else
-        vim.cmd.edit('term://lazygit')
+        vim.cmd.edit(vim.g.lazygit_command)
       end
     end,
     ['tab'] = function()
       if git_buf ~= nil then
         vim.cmd.tabedit(git_buf)
       else
-        vim.cmd.tabedit('term://lazygit')
+        vim.cmd.tabedit(vim.g.lazygit_command)
       end
     end,
     -- Use these to get split direction from your config (i.e. `:set splitright`)
@@ -100,14 +100,14 @@ local function open(method)-- {{{
       if git_buf ~= nil then
         vim.cmd('split ' .. git_buf)
       else
-        vim.cmd('split term://lazygit')
+        vim.cmd('split ' .. vim.g.lazygit_command)
       end
     end,
     ['vsplit'] = function()
       if git_buf ~= nil then
         vim.cmd('vsplit ' .. git_buf)
       else
-        vim.cmd('vsplit term://lazygit')
+        vim.cmd('vsplit ' .. vim.g.lazygit_command)
       end
     end,
     -- Use these to specify the direction of the split
@@ -115,28 +115,28 @@ local function open(method)-- {{{
       if git_buf ~= nil then
         vim.cmd('aboveleft split ' .. git_buf)
       else
-        vim.cmd('aboveleft split term://lazygit')
+        vim.cmd('aboveleft split ' .. vim.g.lazygit_command)
       end
     end,
     ['bottom'] = function()
       if git_buf ~= nil then
         vim.cmd('belowright split ' .. git_buf)
       else
-        vim.cmd('belowright split term://lazygit')
+        vim.cmd('belowright split ' .. vim.g.lazygit_command)
       end
     end,
     ['left'] = function()
       if git_buf ~= nil then
         vim.cmd('aboveleft vsplit ' .. git_buf)
       else
-        vim.cmd('aboveleft vsplit term://lazygit')
+        vim.cmd('aboveleft vsplit ' .. vim.g.lazygit_command)
       end
     end,
     ['right'] = function()
       if git_buf ~= nil then
         vim.cmd('belowright vsplit ' .. git_buf)
       else
-        vim.cmd('belowright vsplit term://lazygit')
+        vim.cmd('belowright vsplit ' .. vim.g.lazygit_command)
       end
     end,
   }-- }}}
@@ -148,6 +148,17 @@ local function open(method)-- {{{
     return
   end
 
+  -- Remove bridge env vars from buffer name
+  if not git_buf and vim.g.lazygit_command ~= 'term://lazygit' then
+    local git_bufnm, _ = utils.find_lazygit()
+    local buf = utils.get_buf_table()[git_bufnm]
+    local bufnm = string.gsub(git_bufnm, vim.b.terminal_job_pid .. ':.*', vim.b.terminal_job_pid .. ':lazygit')
+    vim.api.nvim_buf_set_name(buf, bufnm)
+    -- Neovim stores the old buffer name in a new buffer for the builtin alternate-file
+    -- NOTE: This causes new buffers to have higher numbers due to buf + 1 being reserved
+    vim.api.nvim_buf_delete(buf + 1, { force = true })
+  end
+
   bind_local()
 end-- }}}
 
@@ -156,18 +167,20 @@ local function setup(opts)
   vim.keymap.set('n', cfg.open_mapping, function() open(cfg.open_method) end)
 
   vim.api.nvim_create_autocmd("TermOpen", {
-    pattern = "term://*:lazygit",
+    pattern = "term://*lazygit",
     group = lazygit_group,
     command = "setlocal nonumber norelativenumber | startinsert"
   })
 
   if cfg.prevent_nesting then
     require('luagit.bridge').build_bridge()
+  else
+    vim.g.lazygit_command = 'term://lazygit'
   end
 
   if cfg.insert_on_focus then
     vim.api.nvim_create_autocmd({"BufWinEnter", "WinEnter"}, {
-      pattern = "term://*:lazygit",
+      pattern = "term://*lazygit",
       group = lazygit_group,
       command = "startinsert",
     })
@@ -175,7 +188,7 @@ local function setup(opts)
 
   -- Return to lazygit's alternate file when closing the process with `q`
   vim.api.nvim_create_autocmd("TermClose", {
-    pattern = "term://*:lazygit",
+    pattern = "term://*lazygit",
     group = lazygit_group,
     callback = function()
       local method = vim.g.lazygit_open_method

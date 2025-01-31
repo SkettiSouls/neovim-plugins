@@ -1,12 +1,13 @@
 local luagit = require('luagit')
 local utils = require('luagit.utils')
+
 local lazygit_bridge = [[
 #!/usr/bin/env bash
 # regular files will return two args: `--` `{{filename}}`, COMMIT_EDITMSG returns one: {{filename}}
 if [ ${1##*/} == "COMMIT_EDITMSG" ]; then
   nvim $1 # neovim lacks `--remote-wait`, so we have to let this nest.
 else
-  nvim --server ]] .. vim.fn.serverlist()[1] .. [[ --remote-send "<c-\><c-n>:LazygitEdit $2<cr>"
+  nvim --server ]] .. vim.fn.serverlist()[1] .. [[ --remote-send "<C-\><C-n>:lua require('luagit.bridge').lazygit_edit('$2')<cr>"
 fi
 ]]
 
@@ -24,25 +25,33 @@ local function build_bridge()
   file:close()
   os.execute('chmod +x ' .. tmpfile)
 
-  vim.env.EDITOR = 'vim'
-  vim.env.PATH = tmpdir .. ':' .. vim.env.PATH
-
-  vim.api.nvim_create_user_command('LazygitEdit', function(tbl)
-    vim.cmd.edit(tbl.args)
-    vim.g.lazygit_file = true
-    local git_buf, _ = utils.find_lazygit()
-
-    -- HACK: Return to lazygit when running `:q`
-    vim.api.nvim_create_autocmd('QuitPre', {
-      once = true,
-      group = lazygit_group,
-      callback = function()
-        vim.cmd('new ' .. git_buf)
-        vim.cmd.startinsert()
-        vim.g.lazygit_file = false
-      end
-    })
-  end, { nargs = 1, desc = "Handle editing a file from inside lazygit" })
+  local PATH = tmpdir .. ':' .. vim.env.PATH
+  vim.g.lazygit_command = 'term://EDITOR=vim PATH=' .. PATH .. ' lazygit'
 end
 
-return { build_bridge = build_bridge }
+local function lazygit_edit(file)
+  local git_buf, _ = utils.find_lazygit()
+
+  vim.cmd.edit(file)
+  vim.g.lazygit_file = true
+
+  -- HACK: Return to lazygit when running `:q`
+  vim.api.nvim_create_autocmd('QuitPre', {
+    once = true,
+    group = lazygit_group,
+    callback = function()
+      vim.cmd('new ' ..git_buf)
+      vim.cmd.startinsert()
+      vim.g.lazygit_file = false
+    end
+  })
+
+  -- Clear cmdline and remove self from history
+  vim.cmd('echon " "')
+  vim.fn.histdel(':', -1)
+end
+
+return {
+  build_bridge = build_bridge,
+  lazygit_edit = lazygit_edit,
+}
