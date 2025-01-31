@@ -1,4 +1,4 @@
----@return table { buf_name = buf_num }
+---@return table<bufnm, bufnr> Returns a table containing all open buffers
 local function get_buf_table()-- {{{
   local buf_table = {}
   for _, i in pairs(vim.api.nvim_list_bufs()) do
@@ -8,7 +8,7 @@ local function get_buf_table()-- {{{
   return buf_table
 end-- }}}
 
----@return table { win_num = win_buf_name }
+---@return table<winnr, win_bufnm> Returns a table containing all windows and the names of their buffers
 local function get_win_table()-- {{{
   local win_table = {}
   -- Nvim api uses window id's, but `close` (and presumably other vimscript cmds) use window *number* (the table keys)
@@ -20,8 +20,8 @@ local function get_win_table()-- {{{
   return win_table
 end-- }}}
 
----@return nil|string Name of the lazygit buffer
----@return nil|integer Window number containing the lazygit buffer
+---@return nil|bufnm Name of the Lazygit buffer
+---@return nil|winnr Window number containing the Lazygit buffer
 local function find_lazygit()-- {{{
   local buf_table = get_buf_table()
   local win_table = get_win_table()

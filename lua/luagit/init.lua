@@ -57,7 +57,17 @@ local function bind_local()-- {{{
   vim.keymap.set('t', '<C-q>', function() vim.cmd('bdelete!') end, { buffer = git_buf })
 end-- }}}
 
----@param method nil|string Method to use when opening lazygit, or direction of lazygit split
+---@class luagit.OpenMethod
+---@field replace? string Open buffer in the current window
+---@field tab? string Open buffer in a new tab
+---@field split? string Open buffer as a horizontal split
+---@field vsplit? string Open buffer as a vertical split
+---@field top? string Open buffer as the topmost horizontal split (ignores :splitbelow)
+---@field bottom? string Open buffer as the bottommost horizontal split
+---@field left? string Open buffer as the leftmost vertical split (ignores :splitright)
+---@field right? string Open buffer as the rightmost vertical split
+
+---@param method? luagit.OpenMethod Method to use when opening Lazygit, or direction of Lazygit split
 local function open(method)-- {{{
   local git_buf, _ = utils.find_lazygit()
   method = method or 'replace'
