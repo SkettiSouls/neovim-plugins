@@ -1,6 +1,6 @@
 local utils = require('luagit.utils')
 local config = require('luagit.config')
-local lazygit_group = vim.api.nvim_create_augroup('lazygit', { clear = true })
+local augroup = vim.api.nvim_create_augroup('luagit', { clear = true })
 
 local function check_alt_file()
   local alt = vim.g.lazygit_alternate_file
@@ -78,7 +78,7 @@ local function open(method)-- {{{
     -- Run `close()` when triggered inside lazygit
     close()
     return
-  elseif vim.g.lazygit_file then
+  elseif vim.w.lazygit_file then
     -- Trigger luagit.bridge QuitPre autocmd when triggered in a file opened by lazygit
     vim.cmd.write()
     vim.cmd.quit()
@@ -178,7 +178,7 @@ local function setup(opts)
 
   vim.api.nvim_create_autocmd("TermOpen", {
     pattern = "term://*lazygit",
-    group = lazygit_group,
+    group = augroup,
     command = "setlocal nonumber norelativenumber | startinsert"
   })
 
@@ -191,7 +191,7 @@ local function setup(opts)
   if cfg.insert_on_focus then
     vim.api.nvim_create_autocmd({"BufWinEnter", "WinEnter"}, {
       pattern = "term://*lazygit",
-      group = lazygit_group,
+      group = augroup,
       command = "startinsert",
     })
   end
@@ -199,7 +199,7 @@ local function setup(opts)
   -- Return to lazygit's alternate file when closing the process with `q`
   vim.api.nvim_create_autocmd("TermClose", {
     pattern = "term://*lazygit",
-    group = lazygit_group,
+    group = augroup,
     callback = function()
       local method = vim.g.lazygit_open_method
       if method == 'replace' or method == 'tab' and vim.fn.tabpagenr() == 1 then

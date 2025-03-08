@@ -1,5 +1,6 @@
 local luagit = require('luagit')
 local utils = require('luagit.utils')
+local augroup = vim.api.nvim_create_augroup('luagit', { clear = false })
 
 local lazygit_bridge = [[
 #!/usr/bin/env bash
@@ -27,24 +28,27 @@ local function build_bridge()
 
   local PATH = tmpdir .. ':' .. vim.env.PATH
   vim.g.lazygit_command = 'term://EDITOR=vim PATH=' .. PATH .. ' lazygit'
+
+  -- HACK: Return to lazygit when running `:q`
+  vim.api.nvim_create_autocmd('QuitPre', {
+    -- once = true,
+    group = augroup,
+    callback = function()
+      if vim.w.lazygit_file then
+        vim.cmd('new')
+        luagit.open()
+        vim.cmd.startinsert()
+      end
+      -- vim.w.lazygit_file = false
+    end
+  })
 end
 
 local function lazygit_edit(file)
   local git_buf, _ = utils.find_lazygit()
 
   vim.cmd.edit(file)
-  vim.g.lazygit_file = true
-
-  -- HACK: Return to lazygit when running `:q`
-  vim.api.nvim_create_autocmd('QuitPre', {
-    once = true,
-    group = lazygit_group,
-    callback = function()
-      vim.cmd('new ' ..git_buf)
-      vim.cmd.startinsert()
-      vim.g.lazygit_file = false
-    end
-  })
+  vim.w.lazygit_file = true
 
   -- Clear cmdline and remove self from history
   vim.cmd('echon " "')
