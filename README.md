@@ -3,11 +3,56 @@
 Plugin for opening [Lazygit](https://github.com/jesseduffield/lazygit) as a Neovim buffer.
 <!-- TODO: Demo-->
 <!-- TOC -->
+- [Installation](#installation)
 - [Usage](#usage)
 - [Options](#options)
 - [API](#api)
 - [Nested Sessions](#nested-sessions)
 <!-- TOC -->
+
+## Installation
+### Neovim
+Luagit **PROBABLY** installs exactly as expected in your favorite plugin manager, but I cannot make any guarantees, as it's untested.
+
+### Nix wrapper
+First, add Luagit as a flake input like so:
+```nix
+inputs.luagit = {
+  url = "git+https://codeberg.org/skettisouls/luagit";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+```
+Then, bring Luagit into Neovim's environment:
+```nix
+# Keep in mind, this example does *not* activate luagit, as that is done in your config
+{ pkgs, ... }:
+let
+  inherit (pkgs)
+    neovim-unwrapped
+    wrapNeovim
+    writeShellApplication
+    ;
+
+  system = "YOUR_ARCH";
+
+  luagit = inputs.luagit.packages.${system}.luagit;
+  neovimWrapped = wrapNeovim neovim-unwrapped {
+    configure = {
+      customRC = "luafile /some/path/init.lua";
+      packages.all.start = [ luagit ];
+    };
+  }
+in
+{
+  packages.${system}.myNvim = writeShellApplication {
+    name = "nvim";
+    runtimeInputs = [ pkgs.lazygit ];
+    text = ''
+      ${neovimWrapped}/bin/nvim "$@"
+    '';
+  };
+}
+```
 
 ## Usage
 First, setup Luagit with:
