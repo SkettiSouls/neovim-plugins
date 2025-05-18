@@ -12,22 +12,32 @@ else
 fi
 ]]
 
--- Lazygit forces its' preset and template system on you unless you change your config,
--- so to avoid requiring config changes we create a bash script in /tmp/luagit/<nvim_server>
--- and disguise it as the vim binary in $PATH.
+-- Lazygit forces its' preset and template system on you unless you change your
+-- config, so to avoid requiring config changes we create a bash script in
+-- /tmp/luagit/<nvim_server>/script and disguise it as the vim binary in $PATH.
 local function build_bridge()
   local tmpdir = '/tmp/luagit/' .. string.gsub(vim.fn.serverlist()[1], '^.*/', '')
-  local tmpfile = tmpdir .. '/vim'
-  os.execute('mkdir -p ' .. tmpdir)
+  os.execute('mkdir -p ' .. tmpdir .. '/script')
 
-  local file = io.open(tmpfile, 'w')
-  file:write(lazygit_bridge)
-  file:flush()
-  file:close()
+  -- Edit script has to be in a different directory than the
+  -- lazygit wrapper to prevent bash from infinitely recursing
+  local tmpfile = tmpdir .. '/script/vim'
+  local editor = io.open(tmpfile, 'w')
+  editor:write(lazygit_bridge)
+  editor:flush()
+  editor:close()
   os.execute('chmod +x ' .. tmpfile)
 
-  local PATH = tmpdir .. ':' .. vim.env.PATH
-  vim.g.lazygit_command = 'term://EDITOR=vim PATH=' .. PATH .. ' lazygit'
+  local tmpfile2 = tmpdir .. '/lazygit'
+  local lazygit = io.open(tmpfile2, 'w')
+  lazygit:write([[
+#!/usr/bin/env bash
+EDITOR=vim PATH=]] .. tmpdir .. [[/script:"$PATH" lazygit]])
+  lazygit:flush()
+  lazygit:close()
+  os.execute('chmod +x ' .. tmpfile2)
+
+  vim.g.lazygit_command = 'term://' .. tmpfile2
 
   -- HACK: Return to lazygit when running `:q`
   vim.api.nvim_create_autocmd('QuitPre', {

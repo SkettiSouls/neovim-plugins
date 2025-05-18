@@ -158,7 +158,7 @@ local function open(method)-- {{{
     return
   end
 
-  -- Remove bridge env vars from buffer name
+  -- Reformat buffer name
   if not git_buf and vim.g.lazygit_command ~= 'term://lazygit' then
     local git_bufnm, _ = utils.find_lazygit()
     local buf = utils.get_buf_table()[git_bufnm]
