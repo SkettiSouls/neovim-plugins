@@ -25,7 +25,7 @@ local function pushd(dir)-- {{{
   -- Jump to last directory when enter is pressed
   if dir == "" then
     if dir_stack[2] == nil then
-      vim.notify('pushd: no other directory')
+      vim.notify('Error: Directory stack empty.', vim.log.levels.ERROR)
     else
       -- Jump to last directory and swap stack position
       local current = dir_stack[1]
