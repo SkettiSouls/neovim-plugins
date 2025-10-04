@@ -15,10 +15,10 @@ Plugin for opening [Lazygit](https://github.com/jesseduffield/lazygit) as a Neov
 Luagit **PROBABLY** installs exactly as expected in your favorite plugin manager, but I cannot make any guarantees, as it's untested.
 
 ### Nix wrapper
-First, add Luagit as a flake input like so:
+First, add [my plugin repo](https://codeberg.org/SkettiSouls/neovim-plugins) as a flake input like so:
 ```nix
-inputs.luagit = {
-  url = "git+https://codeberg.org/skettisouls/luagit";
+inputs.extra-plugins = {
+  url = "git+https://codeberg.org/skettisouls/neovim-plugins";
   inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
@@ -34,8 +34,8 @@ let
     ;
 
   system = "YOUR_ARCH";
+  inherit (inputs.extra-plugins.packages.${system}) luagit;
 
-  luagit = inputs.luagit.packages.${system}.luagit;
   neovimWrapped = wrapNeovim neovim-unwrapped {
     configure = {
       customRC = "luafile /some/path/init.lua";
