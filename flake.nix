@@ -11,11 +11,24 @@
     systems = [ "x86_64-linux" "aarch64-linux" ];
 
     perSystem = { pkgs, ... }: {
-      packages = rec {
-        luagit = pkgs.vimUtils.buildVimPlugin {
+      packages = let
+        inherit (pkgs) vimPlugins;
+        inherit (pkgs.vimUtils) buildVimPlugin;
+
+        oil-pushd-nvim = buildVimPlugin {
+          pname = "oil-pushd.nvim";
+          version = "unstable";
+          src = lib.cleanSource ./oil-pushd;
+        };
+      in {
+        luagit = buildVimPlugin {
           pname = "luagit";
           version = "unstable";
           src = lib.cleanSource ./luagit;
+        };
+
+        oil-pushd-nvim = oil-pushd-nvim.overrideAttrs {
+          dependencies = [ vimPlugins.oil-nvim ];
         };
       };
     };
