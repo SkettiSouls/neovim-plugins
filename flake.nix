@@ -15,19 +15,24 @@
         inherit (pkgs) vimPlugins;
         inherit (pkgs.vimUtils) buildVimPlugin;
 
-        oil-pushd-nvim = buildVimPlugin {
+        mkPlugin = {
+          pname,
+          version,
+          dependencies ? [],
+          src ? lib.cleanSource ./${pname},
+          ...
+        }:
+        (buildVimPlugin { inherit pname version src; }).overrideAttrs { inherit dependencies; };
+      in {
+        luagit = mkPlugin {
+          pname = "luagit";
+          version = "unstable";
+        };
+
+        oil-pushd-nvim = mkPlugin {
           pname = "oil-pushd.nvim";
           version = "unstable";
           src = lib.cleanSource ./oil-pushd;
-        };
-      in {
-        luagit = buildVimPlugin {
-          pname = "luagit";
-          version = "unstable";
-          src = lib.cleanSource ./luagit;
-        };
-
-        oil-pushd-nvim = oil-pushd-nvim.overrideAttrs {
           dependencies = [ vimPlugins.oil-nvim ];
         };
       };
